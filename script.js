@@ -1,605 +1,451 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ==========================================
-    // 1. SELECTORES DE ELEMENTOS (GLOBALES)
-    // ==========================================
-    const phone = document.getElementById('phone');
-    const screen = document.getElementById('screen');
-    const currentTimeDisplay = document.getElementById('current-time');
-    
-    // Panel de Ajustes y Blur
-    const quickSettingsPanel = document.getElementById('quick-settings-panel');
-    const screenBackdrop = document.getElementById('screen-backdrop');
-    const qsWifiTile = document.getElementById('qs-wifi-tile');
-    const qsFontTile = document.getElementById('qs-font-tile');
-    const qsSettingsBtn = document.getElementById('qs-settings-btn');
-    const statusBarWifiIcon = document.getElementById('status-bar-wifi-icon');
-    
-    // Navegación y Dock
-    const navHome = document.getElementById('nav-home');
-    const navBack = document.getElementById('nav-back');
-    const navRecents = document.getElementById('nav-recents');
-    const dock = document.querySelector('.dock');
-    
-    // Iconos y Ventanas
-    const appIcons = document.querySelectorAll('.app-icon');
-    const appWindows = document.querySelectorAll('.app-window');
-    
-    // App Recientes
-    const recentsContainer = document.getElementById('recents-container');
-    const recentsCloseAllBtn = document.getElementById('recents-close-all');
-    
-    // App Ajustes (Fondo)
-    const wallpaperUpload = document.getElementById('wallpaper-upload');
-    const removeWallpaperBtn = document.getElementById('remove-wallpaper-btn');
-    const defaultWallpaper = 'linear-gradient(to top, #6a11cb 0%, #2575fc 100%)';
-
-    // App Notas
-    const notesListView = document.getElementById('notes-list-view');
-    const noteEditorView = document.getElementById('note-editor-view');
-    const newNoteBtn = document.getElementById('new-note-btn');
-    const saveNoteBtn = document.getElementById('save-note-btn');
-    const backToListBtn = document.getElementById('back-to-list-btn');
-    const notesListContainer = document.getElementById('notes-list-container');
-    const noteIdInput = document.getElementById('note-id-input');
-    const noteTitleInput = document.getElementById('note-title-input');
-    const noteContentInput = document.getElementById('note-content-input');
-    
-    // App Juego (Snake)
-    const canvas = document.getElementById('snake-canvas');
-    const ctx = canvas.getContext('2d');
-    const scoreDisplay = document.getElementById('score');
-
-    // App Calculadora
-    const calcDisplay = document.getElementById('calc-display');
-    const calcGrid = document.getElementById('calc-grid');
-    
-    // App Gestor de Archivos
-    const storageBar = document.getElementById('storage-bar');
-    const storageUsageText = document.getElementById('storage-usage-text');
-    const storageAvailableText = document.getElementById('storage-available-text');
-    const fileListContainer = document.getElementById('file-list-container');
-    const deleteSelectedFilesBtn = document.getElementById('delete-selected-files-btn');
-
-    // App Galería (Elementos Principales)
-    const galleryGrid = document.getElementById('gallery-grid');
-    const galleryStorageInfo = document.getElementById('gallery-storage-info');
-    
-    // App Galería (Botones de Control)
-    const galleryUpload = document.getElementById('gallery-upload'); // Input file
-    const galleryUploadBtn = document.getElementById('gallery-upload-btn'); // Label botón
-    const gallerySelectBtn = document.getElementById('gallery-select-btn');
-    const galleryDeleteSelectedBtn = document.getElementById('gallery-delete-selected-btn');
-    const galleryCancelSelectBtn = document.getElementById('gallery-cancel-select-btn');
-
-    // Modal de Galería (NUEVO: Incluye botón borrar y wallpaper)
-    const galleryModal = document.getElementById('gallery-modal');
-    const galleryModalImage = document.getElementById('gallery-modal-image');
-    const galleryModalClose = document.getElementById('gallery-modal-close');
-    const setWallpaperBtn = document.getElementById('set-wallpaper-btn');
-    const modalDeleteBtn = document.getElementById('modal-delete-btn'); // Botón borrar en modal
-
-
-    // ==========================================
-    // 2. CONSTANTES Y ESTADO
-    // ==========================================
-    const TOTAL_STORAGE_MB = 5;
-    const TOTAL_STORAGE_BYTES = TOTAL_STORAGE_MB * 1024 * 1024;
-
+    // --- VARIABLES Y ESTADO ---
     let currentOpenApp = null;
     let appHistory = [];
     let qsPanelOpen = false;
-    let isWifiOn = false;
-    const systemFonts = ['Arial, sans-serif', '"Times New Roman", Times, serif', '"Courier New", Courier, monospace', 'Verdana, sans-serif'];
-    let currentFontIndex = 0;
-    
-    // Bases de datos
-    let notesDB = [];
-    let galleryDB = [];
-    let serverPhotos = []; // Fotos de Node.js
-
-    // Estados internos
-    let noteEditorOpen = false;
+    let notesDB = JSON.parse(localStorage.getItem('android_notes')) || [];
+    let galleryDB = JSON.parse(localStorage.getItem('android_gallery')) || [];
+    let serverPhotos = [];
     let gallerySelectionMode = false;
-    let currentModalImageId = null; // ID de la foto abierta actualmente
+    let currentModalImageId = null;
+
+    // -- Variables Paginación Galería --
+    const ITEMS_PER_PAGE = 50;
+    let currentPage = 1;
+
+    // --- ELEMENTOS DOM ---
+    const phone = document.getElementById('phone');
+    const screen = document.getElementById('screen');
+    const dock = document.querySelector('.dock');
+    const screenBackdrop = document.getElementById('screen-backdrop');
+    const quickSettingsPanel = document.getElementById('quick-settings-panel');
+    const appWindows = document.querySelectorAll('.app-window');
     
-    // Estado Calculadora
-    let calcCurrentInput = '0';
-    let calcPreviousInput = '';
-    let calcOperator = null;
+    // ===============================================
+    // 1. SISTEMA DE NAVEGACIÓN (CORE)
+    // ===============================================
 
-
-    // ==========================================
-    // 3. FUNCIONES DE ALMACENAMIENTO Y SISTEMA
-    // ==========================================
-
-    function getStorageUsage() {
-        let totalUsed = 0;
-        for (const key in localStorage) {
-            if (localStorage.hasOwnProperty(key)) {
-                totalUsed += localStorage.getItem(key).length * 2;
-            }
-        }
-        const available = TOTAL_STORAGE_BYTES - totalUsed;
-        return {
-            total: TOTAL_STORAGE_BYTES,
-            used: totalUsed,
-            available: available < 0 ? 0 : available,
-            percent: (totalUsed / TOTAL_STORAGE_BYTES) * 100
-        };
-    }
-
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    function updateStorageDisplays() {
-        const usage = getStorageUsage();
-        if(galleryStorageInfo) galleryStorageInfo.textContent = `Disp: ${formatBytes(usage.available)}`;
-        if(storageBar) {
-            storageBar.value = usage.percent;
-            storageUsageText.textContent = `Usado: ${formatBytes(usage.used)}`;
-            storageAvailableText.textContent = `Libre: ${formatBytes(usage.available)}`;
-        }
-    }
-
-    function updateTime() {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        currentTimeDisplay.textContent = `${hours}:${minutes}`;
-    }
-
-
-    // ==========================================
-    // 4. NAVEGACIÓN Y APPS
-    // ==========================================
-    
     function goToHome() {
+        // Ocultar todas las ventanas
         appWindows.forEach(win => win.style.display = 'none');
-        screenBackdrop.classList.remove('active'); // Quitar blur
-        closeQsPanel();
-        currentOpenApp = null;
-        noteEditorOpen = false;
-        stopGame();
-        dock.classList.add('hidden');
+        // Mostrar el Dock (Quitar clase hidden)
+        dock.classList.remove('hidden');
+        // Quitar blur
+        screenBackdrop.classList.remove('active');
+        // Cerrar panel ajustes
+        quickSettingsPanel.classList.remove('active');
+        qsPanelOpen = false;
         
-        // Si estábamos seleccionando fotos, salir de ese modo
-        if (gallerySelectionMode) toggleGallerySelectMode();
-        // Cerrar modal si estaba abierto
-        closeGalleryModal();
+        // Resetear estados
+        currentOpenApp = null;
+        if(gallerySelectionMode) toggleGallerySelectMode();
+        document.getElementById('gallery-modal').classList.add('hidden');
     }
 
     function openApp(appId) {
-        if (currentOpenApp === appId) return;
-        goToHome(); // Limpiar pantalla
+        if(currentOpenApp === appId) return;
+
+        // 1. Ocultar el Dock
+        dock.classList.add('hidden');
         
-        const appToOpen = document.getElementById(appId);
-        if (appToOpen) {
-            appToOpen.style.display = 'flex';
+        // 2. Ocultar otras apps
+        appWindows.forEach(win => win.style.display = 'none');
+
+        // 3. Mostrar la app deseada
+        const app = document.getElementById(appId);
+        if(app) {
+            app.style.display = 'flex';
             currentOpenApp = appId;
             
-            // Historial
-            const appIndex = appHistory.indexOf(appId);
-            if (appIndex > -1) appHistory.splice(appIndex, 1);
+            // Gestionar historial
+            const idx = appHistory.indexOf(appId);
+            if(idx > -1) appHistory.splice(idx, 1);
             appHistory.push(appId);
 
-            // Inicialización específica
-            switch (appId) {
-                case 'app-notes': renderNoteList(); showNotesList(); break;
-                case 'app-game': startGame(); break;
-                case 'app-recents': screenBackdrop.classList.add('active'); renderRecents(); break;
-                case 'app-gallery': loadGallery(); break;
-                case 'app-file-manager': loadFileManager(); break;
-                case 'app-calculator': resetCalculator(); break;
+            // Configuraciones especiales
+            if(appId === 'app-recents') {
+                screenBackdrop.classList.add('active'); // Blur solo en recientes
+                renderRecents();
+            } else {
+                screenBackdrop.classList.remove('active');
             }
+
+            // Inicializar apps específicas
+            if(appId === 'app-notes') renderNoteList();
+            if(appId === 'app-gallery') loadGallery();
+            if(appId === 'app-game') startGame();
+            if(appId === 'app-file-manager') loadFileManager();
         }
     }
 
     function goBack() {
-        if (qsPanelOpen) { closeQsPanel(); return; }
-        
-        // Cerrar modal con botón atrás
-        if (!galleryModal.classList.contains('hidden')) { closeGalleryModal(); return; }
-        
-        // Comportamientos específicos
-        if (currentOpenApp === 'app-notes' && noteEditorOpen) { showNotesList(); return; }
-        if (currentOpenApp === 'app-gallery' && gallerySelectionMode) { toggleGallerySelectMode(); return; }
-
-        if (currentOpenApp) {
-            appHistory.pop();
-            const lastApp = appHistory[appHistory.length - 1];
-            goToHome();
-            if (lastApp) openApp(lastApp);
+        // Si hay modal, cerrarlo
+        const modal = document.getElementById('gallery-modal');
+        if(!modal.classList.contains('hidden')) {
+            modal.classList.add('hidden');
+            return;
         }
-    }
-
-    // --- Panel de Ajustes y Dock ---
-    function openQsPanel() { quickSettingsPanel.classList.add('active'); screenBackdrop.classList.add('active'); qsPanelOpen = true; }
-    function closeQsPanel() { 
-        quickSettingsPanel.classList.remove('active'); 
-        if (currentOpenApp !== 'app-recents') screenBackdrop.classList.remove('active'); 
-        qsPanelOpen = false; 
-    }
-    function toggleDock() {
-        dock.classList.toggle('hidden');
-        // Esta es la línea mágica que faltaba:
-        screenBackdrop.classList.toggle('active');
-    }
-
-    // --- Ajustes Rápidos ---
-    function toggleWifi() { isWifiOn = !isWifiOn; localStorage.setItem('android_wifi', isWifiOn); updateWifiVisuals(); }
-    function updateWifiVisuals() {
-        qsWifiTile.classList.toggle('active', isWifiOn);
-        statusBarWifiIcon.style.display = isWifiOn ? 'inline' : 'none';
-    }
-    function cycleFont() { currentFontIndex = (currentFontIndex + 1) % systemFonts.length; localStorage.setItem('android_font_index', currentFontIndex); applyFont(); }
-    function applyFont() { phone.style.setProperty('--system-font', systemFonts[currentFontIndex]); }
-
-
-    // ==========================================
-    // 5. FONDO DE PANTALLA
-    // ==========================================
-    function loadWallpaper() {
-        const savedWallpaper = localStorage.getItem('android_wallpaper');
-        if (savedWallpaper) {
-            // CORRECCIÓN: Agregamos comillas "${ }" para soportar URLs con espacios (Node.js)
-            screen.style.backgroundImage = `url("${savedWallpaper}")`;
-        } else {
-            screen.style.backgroundImage = defaultWallpaper;
+        // Si panel abierto, cerrarlo
+        if(qsPanelOpen) {
+            quickSettingsPanel.classList.remove('active');
+            qsPanelOpen = false;
+            return;
         }
-    }
-    
-    // Carga de archivo manual (Desde app Ajustes)
-    if(wallpaperUpload) {
-        wallpaperUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                localStorage.setItem('android_wallpaper', event.target.result);
-                loadWallpaper();
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-    
-    if(removeWallpaperBtn) {
-        removeWallpaperBtn.addEventListener('click', () => {
-            localStorage.removeItem('android_wallpaper');
-            loadWallpaper();
-        });
-    }
-
-
-    // ==========================================
-    // 6. LÓGICA APP GALERÍA (MODAL, NODE.JS Y BORRADO)
-    // ==========================================
-
-    function loadGalleryFromStorage() { galleryDB = JSON.parse(localStorage.getItem('android_gallery')) || []; }
-    function saveGalleryToStorage() { localStorage.setItem('android_gallery', JSON.stringify(galleryDB)); }
-
-    // Conexión con Servidor
-    async function fetchServerPhotos() {
-        try {
-            const response = await fetch('http://localhost:3000/api/fotos');
-            if (response.ok) {
-                serverPhotos = await response.json();
-                console.log("Fotos PC:", serverPhotos.length);
+        // Historial
+        if(currentOpenApp) {
+            appHistory.pop(); 
+            if(appHistory.length > 0) {
+                openApp(appHistory[appHistory.length - 1]);
+            } else {
+                goToHome();
             }
-        } catch (error) {
-            serverPhotos = [];
         }
     }
 
+    // ===============================================
+    // 2. LISTENERS GENERALES
+    // ===============================================
+
+    // Botones de Navegación
+    document.getElementById('nav-home').addEventListener('click', goToHome);
+    document.getElementById('nav-back').addEventListener('click', goBack);
+    document.getElementById('nav-recents').addEventListener('click', () => openApp('app-recents'));
+
+    // Iconos del Dock
+    document.querySelectorAll('.app-icon').forEach(icon => {
+        icon.addEventListener('click', () => {
+            const appId = icon.dataset.app;
+            openApp(appId);
+        });
+    });
+
+    // Teclas: A (Dock), E (Ajustes), Escape (Atrás)
+    document.addEventListener('keydown', (e) => {
+        if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        // --- CAMBIO SOLICITADO: TECLA 'A' PARA MENU ---
+        if(e.key.toLowerCase() === 'a') {
+            dock.classList.toggle('hidden');
+        }
+
+        if(e.key.toLowerCase() === 'e') {
+            if(qsPanelOpen) {
+                quickSettingsPanel.classList.remove('active');
+                if(currentOpenApp !== 'app-recents') screenBackdrop.classList.remove('active');
+            } else {
+                quickSettingsPanel.classList.add('active');
+                screenBackdrop.classList.add('active');
+            }
+            qsPanelOpen = !qsPanelOpen;
+        }
+        
+        if(e.key === 'Escape') goBack();
+    });
+
+    // Panel de Ajustes Rápidos
+    document.getElementById('qs-settings-btn').addEventListener('click', () => {
+        openApp('app-settings');
+        quickSettingsPanel.classList.remove('active');
+    });
+
+    // ===============================================
+    // 3. LÓGICA DE APPS
+    // ===============================================
+
+    // --- FONDO DE PANTALLA ---
+    function loadWallpaper() {
+        const wp = localStorage.getItem('android_wallpaper');
+        if(wp) screen.style.backgroundImage = `url("${wp}")`;
+        else screen.style.backgroundImage = 'linear-gradient(to top, #6a11cb 0%, #2575fc 100%)';
+        
+        screen.style.setProperty('--wp-fit', localStorage.getItem('android_wp_fit') || 'cover');
+        screen.style.setProperty('--wp-pos', localStorage.getItem('android_wp_pos') || 'center');
+    }
+    // Listeners Wallpaper
+    const wpUpload = document.getElementById('wallpaper-upload');
+    if(wpUpload) wpUpload.addEventListener('change', (e) => {
+        const r = new FileReader();
+        r.onload = ev => { localStorage.setItem('android_wallpaper', ev.target.result); loadWallpaper(); };
+        r.readAsDataURL(e.target.files[0]);
+    });
+    document.getElementById('remove-wallpaper-btn').addEventListener('click', () => {
+        localStorage.removeItem('android_wallpaper'); loadWallpaper();
+    });
+    document.getElementById('wp-fit-select').addEventListener('change', (e) => {
+        localStorage.setItem('android_wp_fit', e.target.value); loadWallpaper();
+    });
+    document.getElementById('wp-pos-select').addEventListener('change', (e) => {
+        localStorage.setItem('android_wp_pos', e.target.value); loadWallpaper();
+    });
+
+    // --- GALERÍA ---
     async function loadGallery() {
-        if(galleryGrid) galleryGrid.innerHTML = '<p style="text-align:center;width:100%;margin-top:20px;">Cargando...</p>';
-        await fetchServerPhotos();
+        const grid = document.getElementById('gallery-grid');
+        grid.innerHTML = '<p>Cargando...</p>';
+        try {
+            const res = await fetch('http://localhost:3000/api/fotos');
+            serverPhotos = res.ok ? await res.json() : [];
+        } catch(e) { serverPhotos = []; }
         renderGallery();
-        updateStorageDisplays();
     }
 
+    // --- CAMBIO SOLICITADO: PAGINACIÓN DE 50 EN 50 ---
     function renderGallery() {
-        if (!galleryGrid) return;
-        galleryGrid.innerHTML = '';
+        const grid = document.getElementById('gallery-grid');
+        grid.innerHTML = '';
         
         const allImages = [...galleryDB, ...serverPhotos];
-
-        if (allImages.length === 0) { galleryGrid.innerHTML = '<p style="text-align:center;width:100%;">No hay imágenes.</p>'; return; }
         
-        allImages.forEach(img => {
+        if(allImages.length === 0) { grid.innerHTML = '<p>Vacío</p>'; return; }
+        
+        // Paginación
+        const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
+        if(currentPage > totalPages) currentPage = totalPages;
+        if(currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const itemsToShow = allImages.slice(start, end);
+
+        // Renderizado
+        itemsToShow.forEach(img => {
             const item = document.createElement('div');
             item.className = 'gallery-item';
-            item.dataset.id = img.id;
-            
-            // Borde azul si es PC
-            if (img.id.toString().startsWith('server-')) item.style.border = '1px solid #2575fc';
-
-            item.innerHTML = `
-                <img src="${img.data}" alt="${img.name}" loading="lazy">
-                <span class="gallery-item-name">${img.name}</span>
-                ${img.id.toString().startsWith('server-') ? '<i class="material-icons" style="position:absolute;top:2px;left:2px;font-size:14px;color:#2575fc;background:rgba(255,255,255,0.9);border-radius:50%;padding:2px;">computer</i>' : ''}
-            `;
-            
-            // CLIC: Seleccionar o Abrir Modal
+            if(String(img.id).startsWith('server-')) item.style.border = '2px solid #2575fc';
+            item.innerHTML = `<img src="${img.data}">`;
             item.addEventListener('click', () => {
-                if (gallerySelectionMode) {
-                    // Modo Selección
-                    if (img.id.toString().startsWith('server-')) alert("No puedes borrar archivos del PC.");
+                if(gallerySelectionMode) {
+                    if(String(img.id).startsWith('server-')) alert("No borrar fotos PC");
                     else item.classList.toggle('selected');
                 } else {
-                    // Modo Normal: Abrir Modal
-                    openGalleryModal(img.data, img.id);
+                    document.getElementById('gallery-modal-image').src = img.data;
+                    currentModalImageId = img.id;
+                    document.getElementById('gallery-modal').classList.remove('hidden');
                 }
             });
-            galleryGrid.appendChild(item);
+            grid.appendChild(item);
         });
+
+        // Actualizar Botones
+        document.getElementById('gal-page-info').innerText = `Pág ${currentPage} de ${totalPages}`;
+        document.getElementById('gal-prev-btn').disabled = (currentPage === 1);
+        document.getElementById('gal-next-btn').disabled = (currentPage === totalPages);
     }
 
-    // --- MODAL, WALLPAPER Y BORRADO INDIVIDUAL ---
+    // Botones Paginación
+    document.getElementById('gal-prev-btn').addEventListener('click', () => {
+        if(currentPage > 1) { currentPage--; renderGallery(); }
+    });
+    document.getElementById('gal-next-btn').addEventListener('click', () => {
+        const allImages = [...galleryDB, ...serverPhotos];
+        const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
+        if(currentPage < totalPages) { currentPage++; renderGallery(); }
+    });
 
-    function openGalleryModal(src, id) {
-        galleryModalImage.src = src;
-        currentModalImageId = id; // Guardamos ID actual
-        galleryModal.classList.remove('hidden');
-    }
-
-    function closeGalleryModal() {
-        galleryModal.classList.add('hidden');
-        setTimeout(() => { galleryModalImage.src = ''; }, 300);
-        currentModalImageId = null;
-    }
-
-    // Botón Fondo de Pantalla (En el Modal)
-    if (setWallpaperBtn) {
-        setWallpaperBtn.addEventListener('click', () => {
-            if (galleryModalImage.src) {
-                localStorage.setItem('android_wallpaper', galleryModalImage.src);
-                loadWallpaper();
-                closeGalleryModal();
-                alert("Fondo actualizado");
-            }
-        });
-    }
-
-    // Botón Borrar (En el Modal)
-    if (modalDeleteBtn) {
-        modalDeleteBtn.addEventListener('click', () => {
-            if (!currentModalImageId) return;
-
-            // Verificar si es del servidor
-            if (currentModalImageId.toString().startsWith('server-')) {
-                alert("No puedes borrar fotos del PC desde aquí.");
-                return;
-            }
-
-            if (confirm("¿Borrar esta foto permanentemente?")) {
-                // Borrar de la DB local
-                galleryDB = galleryDB.filter(img => img.id !== currentModalImageId);
-                saveGalleryToStorage();
-                renderGallery(); // Refrescar cuadrícula
-                updateStorageDisplays();
-                closeGalleryModal(); // Cerrar modal
-            }
-        });
-    }
-
-    // --- Selección y Subida Manual ---
-    function handleImageUpload(e) {
-        const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const name = prompt("Nombre:", `Img${galleryDB.length + 1}`) || `Img${galleryDB.length + 1}`;
-            galleryDB.push({ id: Date.now(), name, data: event.target.result });
-            saveGalleryToStorage(); renderGallery(); updateStorageDisplays();
+    // Listeners Galería
+    document.getElementById('gallery-upload').addEventListener('change', (e) => {
+        const r = new FileReader();
+        r.onload = ev => {
+            galleryDB.push({id:Date.now(), name:'Foto', data:ev.target.result});
+            localStorage.setItem('android_gallery', JSON.stringify(galleryDB));
+            renderGallery();
         };
-        reader.readAsDataURL(file);
-        e.target.value = null;
-    }
-
+        r.readAsDataURL(e.target.files[0]);
+    });
+    document.getElementById('gallery-select-btn').addEventListener('click', toggleGallerySelectMode);
+    document.getElementById('gallery-cancel-select-btn').addEventListener('click', toggleGallerySelectMode);
+    
     function toggleGallerySelectMode() {
         gallerySelectionMode = !gallerySelectionMode;
-        if (gallerySelectionMode) {
-            galleryUploadBtn.style.display = 'none'; gallerySelectBtn.style.display = 'none';
-            galleryDeleteSelectedBtn.style.display = 'inline-flex'; galleryCancelSelectBtn.style.display = 'inline-flex';
-        } else {
-            galleryUploadBtn.style.display = 'inline-flex'; gallerySelectBtn.style.display = 'inline-flex';
-            galleryDeleteSelectedBtn.style.display = 'none'; galleryCancelSelectBtn.style.display = 'none';
-            document.querySelectorAll('.gallery-item.selected').forEach(el => el.classList.remove('selected'));
-        }
+        document.getElementById('gallery-delete-selected-btn').style.display = gallerySelectionMode ? 'inline-block' : 'none';
+        document.getElementById('gallery-cancel-select-btn').style.display = gallerySelectionMode ? 'inline-block' : 'none';
+        document.getElementById('gallery-upload-btn').style.display = gallerySelectionMode ? 'none' : 'inline-block';
+        document.getElementById('gallery-select-btn').style.display = gallerySelectionMode ? 'none' : 'inline-block';
     }
-
-    function deleteSelectedImages() {
-        const selected = document.querySelectorAll('.gallery-item.selected');
-        if (selected.length === 0) return;
-        if (confirm(`¿Borrar ${selected.length} fotos?`)) {
-            const ids = Array.from(selected).map(i => Number(i.dataset.id));
-            galleryDB = galleryDB.filter(img => !ids.includes(img.id));
-            saveGalleryToStorage(); renderGallery(); updateStorageDisplays(); toggleGallerySelectMode();
-        }
-    }
-
-
-    // ==========================================
-    // 7. LÓGICA OTRAS APPS
-    // ==========================================
     
-    // Notas
-    function loadNotesFromStorage() { notesDB = JSON.parse(localStorage.getItem('android_notes')) || []; }
-    function saveNotesToStorage() { localStorage.setItem('android_notes', JSON.stringify(notesDB)); }
-    function showNotesList() { notesListView.style.display = 'block'; noteEditorView.style.display = 'none'; noteEditorOpen = false; }
-    function showNoteEditor(note) {
-        notesListView.style.display = 'none'; noteEditorView.style.display = 'flex'; noteEditorView.style.flexDirection = 'column'; noteEditorOpen = true;
-        if(note) { noteIdInput.value = note.id; noteTitleInput.value = note.title; noteContentInput.value = note.content; }
-        else { noteIdInput.value = ''; noteTitleInput.value = ''; noteContentInput.value = ''; }
-    }
+    document.getElementById('gallery-delete-selected-btn').addEventListener('click', () => {
+        const sel = document.querySelectorAll('.gallery-item.selected');
+        const ids = Array.from(sel).map(i => Number(i.dataset.id)); // OJO: ids server son string
+        galleryDB = galleryDB.filter(x => !ids.includes(x.id)); // Solo borra locales
+        localStorage.setItem('android_gallery', JSON.stringify(galleryDB));
+        renderGallery(); toggleGallerySelectMode();
+    });
+
+    // Modal Galería
+    document.getElementById('gallery-modal-close').addEventListener('click', () => {
+        document.getElementById('gallery-modal').classList.add('hidden');
+    });
+    document.getElementById('set-wallpaper-btn').addEventListener('click', () => {
+        localStorage.setItem('android_wallpaper', document.getElementById('gallery-modal-image').src);
+        loadWallpaper(); document.getElementById('gallery-modal').classList.add('hidden');
+    });
+    document.getElementById('modal-delete-btn').addEventListener('click', () => {
+        if(String(currentModalImageId).startsWith('server-')) return alert("No borrar PC");
+        galleryDB = galleryDB.filter(x => x.id !== currentModalImageId);
+        localStorage.setItem('android_gallery', JSON.stringify(galleryDB));
+        renderGallery(); document.getElementById('gallery-modal').classList.add('hidden');
+    });
+
+    // --- NOTAS ---
     function renderNoteList() {
-        notesListContainer.innerHTML = '';
-        if (notesDB.length === 0) { notesListContainer.innerHTML = '<p>No hay notas.</p>'; return; }
-        notesDB.forEach(note => {
-            const el = document.createElement('div'); el.className = 'note-item';
-            el.innerHTML = `<span class="note-item-title">${note.title||'Nota'}</span><i class="material-icons delete-note-btn" data-id="${note.id}">delete</i>`;
-            el.querySelector('.note-item-title').addEventListener('click', () => showNoteEditor(note));
-            el.querySelector('.delete-note-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteNote(note.id); });
-            notesListContainer.appendChild(el);
+        const container = document.getElementById('notes-list-container');
+        container.innerHTML = '';
+        notesDB.forEach(n => {
+            const div = document.createElement('div');
+            div.className = 'note-item';
+            div.innerHTML = `<span>${n.title || 'Nota'}</span> <button class="danger-btn" style="padding:5px;">X</button>`;
+            div.querySelector('span').addEventListener('click', () => {
+                document.getElementById('note-id-input').value = n.id;
+                document.getElementById('note-title-input').value = n.title;
+                document.getElementById('note-content-input').value = n.content;
+                document.getElementById('notes-list-view').style.display = 'none';
+                document.getElementById('note-editor-view').style.display = 'flex';
+            });
+            div.querySelector('button').addEventListener('click', (e) => {
+                e.stopPropagation();
+                notesDB = notesDB.filter(x => x.id !== n.id);
+                localStorage.setItem('android_notes', JSON.stringify(notesDB));
+                renderNoteList();
+            });
+            container.appendChild(div);
         });
     }
-    function saveNote() {
-        const id = noteIdInput.value; const title = noteTitleInput.value; const content = noteContentInput.value;
-        if (id) { const n = notesDB.find(x => x.id == id); if(n) { n.title = title; n.content = content; } }
-        else { notesDB.push({ id: Date.now(), title, content }); }
-        saveNotesToStorage(); renderNoteList(); showNotesList();
-    }
-    function deleteNote(id) { notesDB = notesDB.filter(n => n.id != id); saveNotesToStorage(); renderNoteList(); }
+    document.getElementById('new-note-btn').addEventListener('click', () => {
+        document.getElementById('note-id-input').value = '';
+        document.getElementById('note-title-input').value = '';
+        document.getElementById('note-content-input').value = '';
+        document.getElementById('notes-list-view').style.display = 'none';
+        document.getElementById('note-editor-view').style.display = 'flex';
+    });
+    document.getElementById('save-note-btn').addEventListener('click', () => {
+        const id = document.getElementById('note-id-input').value;
+        const title = document.getElementById('note-title-input').value;
+        const content = document.getElementById('note-content-input').value;
+        if(id) {
+            const n = notesDB.find(x => x.id == id);
+            if(n) { n.title = title; n.content = content; }
+        } else {
+            notesDB.push({id: Date.now(), title, content});
+        }
+        localStorage.setItem('android_notes', JSON.stringify(notesDB));
+        renderNoteList();
+        document.getElementById('notes-list-view').style.display = 'block';
+        document.getElementById('note-editor-view').style.display = 'none';
+    });
+    document.getElementById('back-to-list-btn').addEventListener('click', () => {
+        document.getElementById('notes-list-view').style.display = 'block';
+        document.getElementById('note-editor-view').style.display = 'none';
+    });
 
-    // Snake
-    let snake = [{x:10,y:10}], food = {}, direction = 'right', score = 0, gameLoop;
-    const gridSize = 20, canvasWidth = 340, canvasHeight = 400;
-    function resetGame() { snake = [{x:10,y:10}]; direction = 'right'; score = 0; scoreDisplay.textContent = 0; moveFood(); }
-    function moveFood() { food = {x: Math.floor(Math.random()*(canvasWidth/gridSize)), y: Math.floor(Math.random()*(canvasHeight/gridSize))}; }
-    function draw() {
-        ctx.clearRect(0,0,canvasWidth,canvasHeight);
-        for(let i=0; i<snake.length; i++) { ctx.fillStyle = i===0?'lime':'green'; ctx.fillRect(snake[i].x*gridSize, snake[i].y*gridSize, gridSize, gridSize); }
-        ctx.fillStyle = 'red'; ctx.fillRect(food.x*gridSize, food.y*gridSize, gridSize, gridSize);
-        let hX = snake[0].x, hY = snake[0].y;
-        if (direction==='right') hX++; if (direction==='left') hX--; if (direction==='up') hY--; if (direction==='down') hY++;
-        if (hX<0 || hX*gridSize>=canvasWidth || hY<0 || hY*gridSize>=canvasHeight || snake.some(s=>s.x===hX && s.y===hY)) { resetGame(); return; }
-        if (hX===food.x && hY===food.y) { score++; scoreDisplay.textContent = score; moveFood(); } else { snake.pop(); }
-        snake.unshift({x:hX, y:hY});
-    }
-    function startGame() { if(gameLoop) clearInterval(gameLoop); resetGame(); gameLoop = setInterval(draw, 100); document.addEventListener('keydown', changeDirection); }
-    function stopGame() { if(gameLoop) clearInterval(gameLoop); document.removeEventListener('keydown', changeDirection); }
-    function changeDirection(e) {
-        if(currentOpenApp !== 'app-game') return;
-        const k = e.key;
-        if(k==='ArrowLeft'&&direction!=='right') direction='left';
-        if(k==='ArrowUp'&&direction!=='down') direction='up';
-        if(k==='ArrowRight'&&direction!=='left') direction='right';
-        if(k==='ArrowDown'&&direction!=='up') direction='down';
-    }
-
-    // Calculadora
-    function resetCalculator() { calcCurrentInput = '0'; calcPreviousInput = ''; calcOperator = null; updateCalcDisplay(); }
-    function updateCalcDisplay() { if(calcDisplay) calcDisplay.textContent = calcCurrentInput; }
-    function handleCalcInput(e) {
-        const t = e.target; if(!t.matches('.calc-button')) return;
-        const type = t.dataset.type, val = t.dataset.value;
-        if(type==='number') { if(calcCurrentInput==='0') calcCurrentInput=''; calcCurrentInput+=val; }
-        if(type==='operator') { if(calcOperator && calcPreviousInput) calculate(); calcOperator=val; calcPreviousInput=calcCurrentInput; calcCurrentInput='0'; }
-        if(type==='equals') { if(calcOperator && calcPreviousInput) { calculate(); calcOperator=null; } }
-        if(type==='clear') resetCalculator();
-        if(type==='backspace') { calcCurrentInput = calcCurrentInput.slice(0,-1) || '0'; }
-        updateCalcDisplay();
-    }
-    function calculate() {
-        const p = parseFloat(calcPreviousInput), c = parseFloat(calcCurrentInput);
-        if(isNaN(p)||isNaN(c)) return;
-        let res = 0;
-        if(calcOperator==='+') res = p+c; if(calcOperator==='-') res = p-c; if(calcOperator==='*') res = p*c; if(calcOperator==='/') res = p/c;
-        calcCurrentInput = String(res); calcPreviousInput = '';
-    }
-
-    // Archivos
-    function loadFileManager() { updateStorageDisplays(); renderFileList(); }
-    function renderFileList() {
-        if(!fileListContainer) return;
-        fileListContainer.innerHTML = '';
-        const notesFiles = notesDB.map(n=>({id:n.id, name:n.title||'Nota', type:'Nota', size:100, src:'notes'}));
-        const imageFiles = galleryDB.map(img=>({id:img.id, name:img.name, type:'Img', size:img.data.length, src:'gallery'}));
-        const allFiles = [...notesFiles, ...imageFiles];
+    // --- SNAKE ---
+    let snakeLoop;
+    function startGame() {
+        const canvas = document.getElementById('snake-canvas');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let snake = [{x:10, y:10}];
+        let food = {x:15, y:15};
+        let dir = 'right';
+        if(snakeLoop) clearInterval(snakeLoop);
         
-        if(allFiles.length===0) { fileListContainer.innerHTML='<p>Vacío</p>'; return; }
-        allFiles.forEach(f => {
-            const el = document.createElement('div'); el.className = 'file-list-item';
-            el.innerHTML = `<input type="checkbox" class="file-checkbox" data-id="${f.id}" data-src="${f.src}"><div class="file-info"><span class="file-name">${f.name}</span><span class="file-meta">${f.type}</span></div>`;
-            fileListContainer.appendChild(el);
+        document.addEventListener('keydown', e => {
+            if(currentOpenApp !== 'app-game') return;
+            if(e.key === 'ArrowUp') dir = 'up';
+            if(e.key === 'ArrowDown') dir = 'down';
+            if(e.key === 'ArrowLeft') dir = 'left';
+            if(e.key === 'ArrowRight') dir = 'right';
         });
+
+        snakeLoop = setInterval(() => {
+            let x = snake[0].x, y = snake[0].y;
+            if(dir === 'right') x++; if(dir === 'left') x--;
+            if(dir === 'up') y--; if(dir === 'down') y++;
+            
+            if(x<0 || x>39 || y<0 || y>21) { // 800/20=40, 450/20=22.5
+                snake = [{x:10,y:10}]; x=10; y=10;
+            }
+            snake.unshift({x,y});
+            if(x===food.x && y===food.y) {
+                food = {x:Math.floor(Math.random()*39), y:Math.floor(Math.random()*21)};
+                document.getElementById('score').innerText = snake.length;
+            } else snake.pop();
+
+            ctx.fillStyle = '#222'; ctx.fillRect(0,0,800,450);
+            ctx.fillStyle = 'lime'; snake.forEach(s => ctx.fillRect(s.x*20, s.y*20, 18, 18));
+            ctx.fillStyle = 'red'; ctx.fillRect(food.x*20, food.y*20, 18, 18);
+        }, 100);
     }
-    if(deleteSelectedFilesBtn) deleteSelectedFilesBtn.addEventListener('click', () => {
-        const chk = document.querySelectorAll('.file-checkbox:checked');
-        if(chk.length===0) return;
-        chk.forEach(c => {
-            if(c.dataset.src==='notes') notesDB = notesDB.filter(n=>n.id!=c.dataset.id);
-            if(c.dataset.src==='gallery') galleryDB = galleryDB.filter(g=>g.id!=c.dataset.id);
-        });
-        saveNotesToStorage(); saveGalleryToStorage(); loadFileManager();
+
+    // --- CALCULADORA ---
+    let calcStr = '0';
+    document.getElementById('calc-grid').addEventListener('click', (e) => {
+        if(!e.target.classList.contains('calc-button')) return;
+        const type = e.target.dataset.type;
+        const val = e.target.dataset.val;
+        
+        if(type === 'num') {
+            if(calcStr === '0') calcStr = val; else calcStr += val;
+        } else if(type === 'op') {
+            calcStr += val;
+        } else if(type === 'eq') {
+            try { calcStr = String(eval(calcStr)); } catch { calcStr = 'Error'; }
+        } else if(type === 'clear') {
+            calcStr = '0';
+        } else if(type === 'back') {
+            calcStr = calcStr.slice(0, -1) || '0';
+        }
+        document.getElementById('calc-display').innerText = calcStr;
     });
 
-    // Recientes
+    // --- ARCHIVOS ---
+    function loadFileManager() {
+        const cont = document.getElementById('file-list-container');
+        cont.innerHTML = '';
+        const files = [
+            ...notesDB.map(n => ({name: n.title, type: 'Nota'})),
+            ...galleryDB.map(g => ({name: g.name, type: 'Foto'}))
+        ];
+        files.forEach(f => {
+            const div = document.createElement('div');
+            div.style.padding = '10px'; div.style.background = 'white'; div.style.margin = '5px 0';
+            div.innerHTML = `<b>${f.name}</b> <small>(${f.type})</small>`;
+            cont.appendChild(div);
+        });
+        document.getElementById('storage-usage-text').innerText = `Archivos: ${files.length}`;
+        document.getElementById('storage-bar').value = files.length; // Simbólico
+    }
+
+    // --- RECIENTES ---
     function renderRecents() {
-        if(!recentsContainer) return;
-        recentsContainer.innerHTML = '';
-        if(appHistory.length===0) recentsContainer.innerHTML = '<p>Vacío</p>';
+        const cont = document.getElementById('recents-container');
+        cont.innerHTML = '';
         [...appHistory].reverse().forEach(id => {
-            if(id==='app-recents') return;
-            const name = document.querySelector(`.app-icon[data-app="${id}"] span`).textContent;
-            const el = document.createElement('div'); el.className = 'recent-card';
-            el.innerHTML = `<span>${name}</span><i class="material-icons close-recent-btn">close</i>`;
-            el.addEventListener('click', () => openApp(id));
-            el.querySelector('i').addEventListener('click', (e) => { e.stopPropagation(); appHistory=appHistory.filter(h=>h!=id); renderRecents(); });
-            recentsContainer.appendChild(el);
+            if(id === 'app-recents') return;
+            const div = document.createElement('div');
+            div.className = 'recent-card';
+            div.innerHTML = `<span>App: ${id.replace('app-','')}</span> <button>X</button>`;
+            div.addEventListener('click', () => openApp(id));
+            div.querySelector('button').addEventListener('click', (e) => {
+                e.stopPropagation();
+                appHistory = appHistory.filter(h => h !== id);
+                renderRecents();
+            });
+            cont.appendChild(div);
         });
     }
-    if(recentsCloseAllBtn) recentsCloseAllBtn.addEventListener('click', () => { appHistory = []; goToHome(); });
-
-
-    // ==========================================
-    // 8. EVENT LISTENERS GENERALES
-    // ==========================================
-    
-    // Nav
-    if(navHome) navHome.addEventListener('click', goToHome);
-    if(navBack) navBack.addEventListener('click', goBack);
-    if(navRecents) navRecents.addEventListener('click', () => openApp('app-recents'));
-    appIcons.forEach(i => i.addEventListener('click', () => openApp(i.dataset.app)));
-    
-    // Panel
-    if(qsWifiTile) qsWifiTile.addEventListener('click', toggleWifi);
-    if(qsFontTile) qsFontTile.addEventListener('click', cycleFont);
-    if(qsSettingsBtn) qsSettingsBtn.addEventListener('click', () => { openApp('app-settings'); closeQsPanel(); });
-    
-    // Teclado
-    document.addEventListener('keydown', (e) => {
-        if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
-        if(e.key.toLowerCase()==='e') { if(qsPanelOpen) closeQsPanel(); else openQsPanel(); }
-        if(e.key==='Escape') { if(qsPanelOpen) closeQsPanel(); }
-        if(e.key.toLowerCase()==='a') toggleDock();
+    document.getElementById('recents-close-all').addEventListener('click', () => {
+        appHistory = []; goToHome();
     });
 
-    // Galería (Botones)
-    if(galleryUpload) galleryUpload.addEventListener('change', handleImageUpload);
-    if(gallerySelectBtn) gallerySelectBtn.addEventListener('click', toggleGallerySelectMode);
-    if(galleryCancelSelectBtn) galleryCancelSelectBtn.addEventListener('click', toggleGallerySelectMode);
-    if(galleryDeleteSelectedBtn) galleryDeleteSelectedBtn.addEventListener('click', deleteSelectedImages);
-    if(galleryModalClose) galleryModalClose.addEventListener('click', closeGalleryModal);
-    if(galleryModal) galleryModal.addEventListener('click', (e) => { if(e.target===galleryModal) closeGalleryModal(); });
+    // --- HORA ---
+    setInterval(() => {
+        const d = new Date();
+        document.getElementById('current-time').innerText = 
+            `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }, 1000);
 
-    // Notas
-    if(newNoteBtn) newNoteBtn.addEventListener('click', () => showNoteEditor(null));
-    if(backToListBtn) backToListBtn.addEventListener('click', showNotesList);
-    if(saveNoteBtn) saveNoteBtn.addEventListener('click', saveNote);
-
-    // Calc
-    if(calcGrid) calcGrid.addEventListener('click', handleCalcInput);
-
-
-    // ==========================================
-    // 9. INICIALIZACIÓN
-    // ==========================================
+    // INICIO
     loadWallpaper();
-    loadNotesFromStorage();
-    loadGalleryFromStorage();
-    loadWifiState();
-    
-    const savedFont = localStorage.getItem('android_font_index');
-    if(savedFont) { currentFontIndex = parseInt(savedFont); applyFont(); }
-    
-    function loadWifiState() { isWifiOn = localStorage.getItem('android_wifi')==='true'; updateWifiVisuals(); }
-    
-    updateTime();
-    setInterval(updateTime, 1000);
     goToHome();
 });

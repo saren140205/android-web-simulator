@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Android v5 en Web</title>
+    <title>Android Tablet Web</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
@@ -17,74 +17,101 @@
             <div id="status-bar">
                 <span id="current-time">12:00</span>
                 <div class="status-icons">
-                    <i id="status-bar-wifi-icon" class="material-icons" style="display: none;">wifi</i>
-                    <i class="material-icons">battery_full</i>
+                    <i class="material-icons" id="status-bar-wifi-icon" style="font-size: 14px;">wifi</i>
+                    <i class="material-icons" style="font-size: 14px;">battery_full</i>
                 </div>
             </div>
-            
+
             <div id="quick-settings-panel">
                 <div class="qs-grid">
-                    <div id="qs-wifi-tile" class="qs-tile"><i class="material-icons">wifi</i><span>Wi-Fi</span></div>
-                    <div class="qs-tile"><i class="material-icons">bluetooth</i><span>Bluetooth</span></div>
-                    <div class="qs-tile"><i class="material-icons">flashlight_on</i><span>Linterna</span></div>
-                    <div id="qs-font-tile" class="qs-tile"><i class="material-icons">format_size</i><span>Fuente</span></div>
-                    <div class="qs-tile"><i class="material-icons">brightness_6</i><span>Brillo</span></div>
-                    <div class="qs-tile"><i class="material-icons">screen_rotation</i><span>Girar</span></div>
-                </div>
-                <div class="qs-footer">
-                    <i id="qs-settings-btn" class="material-icons">settings</i>
+                    <div class="qs-tile active" id="qs-wifi-tile">
+                        <i class="material-icons">wifi</i>
+                        <span>Wi-Fi</span>
+                    </div>
+                    <div class="qs-tile" id="qs-bluetooth-tile">
+                        <i class="material-icons">bluetooth</i>
+                        <span>Blue...</span>
+                    </div>
+                    <div class="qs-tile" id="qs-font-tile">
+                        <i class="material-icons">font_download</i>
+                        <span>Fuente</span>
+                    </div>
+                    <div class="qs-tile" id="qs-settings-btn">
+                        <i class="material-icons">settings</i>
+                        <span>Ajustes</span>
+                    </div>
                 </div>
             </div>
 
             <div id="home-screen"></div>
 
-            <div class="dock hidden">
+            <div class="dock">
                 <div class="app-icon" data-app="app-notes">
-                    <i class="material-icons">description</i>
+                    <i class="material-icons" style="color: #f1c40f;">description</i>
                     <span>Notas</span>
                 </div>
                 <div class="app-icon" data-app="app-game">
-                    <i class="material-icons">sports_esports</i>
+                    <i class="material-icons" style="color: #2ecc71;">sports_esports</i>
                     <span>Snake</span>
                 </div>
                 <div class="app-icon" data-app="app-gallery">
-                    <i class="material-icons">photo_library</i>
+                    <i class="material-icons" style="color: #e74c3c;">collections</i>
                     <span>Galería</span>
                 </div>
                 <div class="app-icon" data-app="app-calculator">
-                    <i class="material-icons">calculate</i>
+                    <i class="material-icons" style="color: #34495e;">calculate</i>
                     <span>Calculadora</span>
                 </div>
                 <div class="app-icon" data-app="app-file-manager">
-                    <i class="material-icons">folder_open</i>
+                    <i class="material-icons" style="color: #e67e22;">folder</i>
                     <span>Archivos</span>
                 </div>
                 <div class="app-icon" data-app="app-settings">
-                    <i class="material-icons">settings</i>
+                    <i class="material-icons" style="color: #95a5a6;">settings</i>
                     <span>Ajustes</span>
                 </div>
             </div>
             
             <div class="nav-bar">
-                <div id="nav-back" class="nav-button"><i class="material-icons">arrow_back</i></div>
-                <div id="nav-home" class="nav-button"><i class="material-icons">home</i></div>
-                <div id="nav-recents" class="nav-button"><i class="material-icons">crop_square</i></div>
+                <button class="nav-button" id="nav-back"><i class="material-icons">arrow_back</i></button>
+                <button class="nav-button" id="nav-home"><i class="material-icons">home</i></button>
+                <button class="nav-button" id="nav-recents"><i class="material-icons">crop_square</i></button>
             </div>
+
 
             <div id="app-settings" class="app-window">
                 <div class="app-header"><span>Ajustes</span></div>
                 <div class="app-body">
-                    <h3>Fondo de Pantalla</h3>
-                    <p>Selecciona una imagen para tu fondo.</p>
-                    <label for="wallpaper-upload" class="file-upload-label">
-                        <i class="material-icons">upload_file</i>
-                        <span>Elegir archivo</span>
-                    </label>
-                    <input type="file" id="wallpaper-upload" accept="image/*">
-                    <button id="remove-wallpaper-btn" class="danger-btn">
-                        <i class="material-icons">delete_outline</i>
-                        <span>Quitar Fondo</span>
-                    </button>
+                    <h3>Personalización</h3>
+                    
+                    <div class="settings-group">
+                        <input type="file" id="wallpaper-upload" accept="image/*" style="display: none;">
+                        <button class="secondary-btn" onclick="document.getElementById('wallpaper-upload').click()">
+                            <i class="material-icons">image</i> Cambiar Fondo
+                        </button>
+                        <button class="danger-btn" id="remove-wallpaper-btn">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </div>
+
+                    <div class="settings-group" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Ajuste de Imagen</label>
+                        <select id="wp-fit-select" class="settings-select" style="width:100%; padding:8px; margin-bottom:10px;">
+                            <option value="cover">Rellenar (Recortar)</option>
+                            <option value="contain">Completa (Bordes negros)</option>
+                            <option value="100% 100%">Estirar (Deformar)</option>
+                        </select>
+
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Posición</label>
+                        <select id="wp-pos-select" class="settings-select" style="width:100%; padding:8px;">
+                            <option value="center">Centro</option>
+                            <option value="top">Arriba</option>
+                            <option value="bottom">Abajo</option>
+                        </select>
+                    </div>
+
+                    <h3>Información</h3>
+                    <p>Android Web Simulator v2.0 (Tablet)</p>
                 </div>
             </div>
 
@@ -92,18 +119,17 @@
                 <div class="app-header"><span>Notas</span></div>
                 <div class="app-body">
                     <div id="notes-list-view">
-                        <button id="new-note-btn" class="primary-btn">
-                            <i class="material-icons">add_circle</i>
-                            <span>Nueva Nota</span>
-                        </button>
+                        <button class="primary-btn" id="new-note-btn" style="width:100%; margin-bottom:10px;">+ Nueva Nota</button>
                         <div id="notes-list-container"></div>
                     </div>
-                    <div id="note-editor-view" style="display: none;">
+                    <div id="note-editor-view" style="display: none; height: 100%;">
                         <input type="hidden" id="note-id-input">
-                        <input type="text" id="note-title-input" placeholder="Título de la nota">
-                        <textarea id="note-content-input" placeholder="Escribe algo..."></textarea>
-                        <button id="save-note-btn" class="primary-btn">Guardar</button>
-                        <button id="back-to-list-btn">Volver</button>
+                        <input type="text" id="note-title-input" placeholder="Título" class="note-input">
+                        <textarea id="note-content-input" placeholder="Escribe aquí..." class="note-textarea"></textarea>
+                        <div class="note-actions">
+                            <button class="secondary-btn" id="back-to-list-btn">Cancelar</button>
+                            <button class="primary-btn" id="save-note-btn">Guardar</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -112,36 +138,15 @@
                 <div class="app-header"><span>Snake</span></div>
                 <div class="app-body game-body">
                     <div id="game-info">Puntuación: <span id="score">0</span></div>
-                    <canvas id="snake-canvas" width="340" height="400"></canvas>
+                    <canvas id="snake-canvas" width="800" height="450"></canvas>
                     <p class="game-instructions">Usa las teclas de flecha para moverte.</p>
                 </div>
             </div>
 
             <div id="app-recents" class="app-window">
-                <div class="app-header">
-                    <span>Ventanas Abiertas</span>
-                    <button id="recents-close-all" class="danger-btn small-btn">Cerrar Todo</button>
-                </div>
-                <div class="app-body" id="recents-container"></div>
-            </div>
-
-            <div id="app-gallery" class="app-window">
-                <div class="app-header"><span>Galería</span></div>
-                <div class="app-body">
-                    <div class="gallery-controls">
-                        <label for="gallery-upload" class="file-upload-label small-btn">
-                            <i class="material-icons">add_a_photo</i>
-                            <span>Subir Foto</span>
-                        </label>
-                        <input type="file" id="gallery-upload" accept="image/*">
-                        <div class="storage-info" id="gallery-storage-info">
-                            Calculando...
-                        </div>
+                <div class="app-header"><span>Ventanas Abiertas</span> <button id="recents-close-all" style="float:right;">Borrar todo</button></div>
+                <div class="app-body" id="recents-container">
                     </div>
-                    <div id="gallery-grid">
-                        <p>No hay imágenes.</p>
-                    </div>
-                </div>
             </div>
 
             <div id="app-calculator" class="app-window">
@@ -149,75 +154,103 @@
                 <div class="app-body calc-body">
                     <div id="calc-display">0</div>
                     <div id="calc-grid">
-                        <button class="calc-button" data-type="clear">C</button>
-                        <button class="calc-button" data-type="operator" data-value="/">&divide;</button>
-                        <button class="calc-button" data-type="operator" data-value="*">&times;</button>
-                        <button class="calc-button" data-type="backspace">&larr;</button>
-
+                        <button class="calc-button" data-type="clear" data-value="C">C</button>
+                        <button class="calc-button" data-type="operator" data-value="/">/</button>
+                        <button class="calc-button" data-type="operator" data-value="*">×</button>
+                        <button class="calc-button" data-type="backspace" data-value="<">⌫</button>
+                        
                         <button class="calc-button" data-type="number" data-value="7">7</button>
                         <button class="calc-button" data-type="number" data-value="8">8</button>
                         <button class="calc-button" data-type="number" data-value="9">9</button>
-                        <button class="calc-button" data-type="operator" data-value="-">&ndash;</button>
-
+                        <button class="calc-button" data-type="operator" data-value="-">-</button>
+                        
                         <button class="calc-button" data-type="number" data-value="4">4</button>
                         <button class="calc-button" data-type="number" data-value="5">5</button>
                         <button class="calc-button" data-type="number" data-value="6">6</button>
                         <button class="calc-button" data-type="operator" data-value="+">+</button>
-
+                        
                         <button class="calc-button" data-type="number" data-value="1">1</button>
                         <button class="calc-button" data-type="number" data-value="2">2</button>
                         <button class="calc-button" data-type="number" data-value="3">3</button>
-                        <button class="calc-button" data-type="equals" data-value="=">=</button>
-
-                        <button class="calc-button" data-type="number" data-value="0">0</button>
+                        <button class="calc-button" data-type="equals" data-value="=" style="grid-row: span 2; background-color: var(--primary-color); color: white;">=</button>
+                        
+                        <button class="calc-button" data-type="number" data-value="0" style="grid-column: span 2;">0</button>
                         <button class="calc-button" data-type="number" data-value=".">.</button>
                     </div>
                 </div>
             </div>
 
             <div id="app-file-manager" class="app-window">
-                <div class="app-header">
-                    <span>Archivos</span>
-                    <button id="delete-selected-files-btn" class="danger-btn small-btn">
-                        <i class="material-icons">delete</i>
-                        <span>Borrar</span>
-                    </button>
-                </div>
+                <div class="app-header"><span>Mis Archivos</span></div>
                 <div class="app-body">
-                    <div class="storage-summary">
-                        <h3>Almacenamiento</h3>
-                        <progress id="storage-bar" max="100" value="0"></progress>
-                        <div class="storage-details">
-                            <span id="storage-usage-text">Usado: 0 B de 5 MB</span>
-                            <span id="storage-available-text">Disponible: 5 MB</span>
+                    <div class="storage-bar-container">
+                        <div class="storage-text">
+                            <span id="storage-usage-text">Usado: 0 MB</span>
+                            <span id="storage-available-text">Libre: 5 MB</span>
                         </div>
+                        <progress id="storage-bar" value="0" max="100"></progress>
+                    </div>
+                    <div class="file-actions">
+                        <button class="danger-btn small-btn" id="delete-selected-files-btn">
+                            <i class="material-icons">delete</i> Eliminar Seleccionados
+                        </button>
                     </div>
                     <div id="file-list-container">
-                        <p>No hay archivos.</p>
+                        </div>
+                </div>
+            </div>
+
+            <div id="app-gallery" class="app-window">
+                <div class="app-header"><span>Galería</span></div>
+                <div class="app-body" style="display:flex; flex-direction:column; height:100%;">
+                    <div class="gallery-controls">
+                        <label for="gallery-upload" class="file-upload-label small-btn" id="gallery-upload-btn">
+                            <i class="material-icons">add_a_photo</i> <span>Subir</span>
+                        </label>
+                        <input type="file" id="gallery-upload" accept="image/*" style="display: none;">
+                        
+                        <button class="primary-btn small-btn" id="gallery-select-btn">
+                            <i class="material-icons">check_box</i> <span>Seleccionar</span>
+                        </button>
+                        
+                        <button class="danger-btn small-btn" id="gallery-delete-selected-btn" style="display: none;">
+                            <i class="material-icons">delete</i> <span>Borrar</span>
+                        </button>
+                        <button class="secondary-btn small-btn" id="gallery-cancel-select-btn" style="display: none;">
+                            <i class="material-icons">cancel</i> <span>Cancelar</span>
+                        </button>
+                        
+                        <div class="storage-info" id="gallery-storage-info">Calculando...</div>
+                    </div>
+                    <div id="gallery-grid" style="flex: 1; overflow-y: auto;">
+                        <p>No hay imágenes.</p>
+                    </div>
+                    <div class="pagination-controls" style="padding: 10px; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center; gap: 15px;">
+                        <button id="gal-prev-btn" class="secondary-btn small-btn">&lt; Anterior</button>
+                        <span id="gal-page-info" style="font-weight: bold;">Página 1</span>
+                        <button id="gal-next-btn" class="secondary-btn small-btn">Siguiente &gt;</button>
                     </div>
                 </div>
             </div>
 
-        </div>
-    </div>
-    <div id="gallery-modal" class="hidden">
-        <button id="gallery-modal-close">&times;</button>
-        
-        <div class="modal-content">
-            <img id="gallery-modal-image" src="" alt="Vista completa">
-            
-            <div class="modal-actions">
-                <button id="set-wallpaper-btn" class="primary-btn">
-                    <i class="material-icons">wallpaper</i>
-                    <span>Fondo</span>
-                </button>
+            <div id="gallery-modal" class="hidden">
+                <button id="gallery-modal-close">&times;</button>
                 
-                <button id="modal-delete-btn" class="danger-btn" style="width: auto; padding: 10px 15px;">
-                    <i class="material-icons">delete</i>
-                </button>
+                <div class="modal-content">
+                    <img id="gallery-modal-image" src="" alt="Vista completa">
+                    
+                    <div class="modal-actions">
+                        <button id="set-wallpaper-btn" class="primary-btn">
+                            <i class="material-icons">wallpaper</i>
+                            <span>Fondo</span>
+                        </button>
+                        <button id="modal-delete-btn" class="danger-btn" style="width: auto; padding: 10px 15px;">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    <script src="script.js"></script>
+
+        </div> </div> <script src="script.js"></script>
 </body>
 </html>
