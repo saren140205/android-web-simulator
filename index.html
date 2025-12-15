@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android v5 en Web</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+
+    <div id="phone">
+        <div id="screen">
+            
+            <div id="screen-backdrop"></div>
+
+            <div id="status-bar">
+                <span id="current-time">12:00</span>
+                <div class="status-icons">
+                    <i id="status-bar-wifi-icon" class="material-icons" style="display: none;">wifi</i>
+                    <i class="material-icons">battery_full</i>
+                </div>
+            </div>
+            
+            <div id="quick-settings-panel">
+                <div class="qs-grid">
+                    <div id="qs-wifi-tile" class="qs-tile"><i class="material-icons">wifi</i><span>Wi-Fi</span></div>
+                    <div class="qs-tile"><i class="material-icons">bluetooth</i><span>Bluetooth</span></div>
+                    <div class="qs-tile"><i class="material-icons">flashlight_on</i><span>Linterna</span></div>
+                    <div id="qs-font-tile" class="qs-tile"><i class="material-icons">format_size</i><span>Fuente</span></div>
+                    <div class="qs-tile"><i class="material-icons">brightness_6</i><span>Brillo</span></div>
+                    <div class="qs-tile"><i class="material-icons">screen_rotation</i><span>Girar</span></div>
+                </div>
+                <div class="qs-footer">
+                    <i id="qs-settings-btn" class="material-icons">settings</i>
+                </div>
+            </div>
+
+            <div id="home-screen"></div>
+
+            <div class="dock hidden">
+                <div class="app-icon" data-app="app-notes">
+                    <i class="material-icons">description</i>
+                    <span>Notas</span>
+                </div>
+                <div class="app-icon" data-app="app-game">
+                    <i class="material-icons">sports_esports</i>
+                    <span>Snake</span>
+                </div>
+                <div class="app-icon" data-app="app-gallery">
+                    <i class="material-icons">photo_library</i>
+                    <span>Galería</span>
+                </div>
+                <div class="app-icon" data-app="app-calculator">
+                    <i class="material-icons">calculate</i>
+                    <span>Calculadora</span>
+                </div>
+                <div class="app-icon" data-app="app-file-manager">
+                    <i class="material-icons">folder_open</i>
+                    <span>Archivos</span>
+                </div>
+                <div class="app-icon" data-app="app-settings">
+                    <i class="material-icons">settings</i>
+                    <span>Ajustes</span>
+                </div>
+            </div>
+            
+            <div class="nav-bar">
+                <div id="nav-back" class="nav-button"><i class="material-icons">arrow_back</i></div>
+                <div id="nav-home" class="nav-button"><i class="material-icons">home</i></div>
+                <div id="nav-recents" class="nav-button"><i class="material-icons">crop_square</i></div>
+            </div>
+
+            <div id="app-settings" class="app-window">
+                <div class="app-header"><span>Ajustes</span></div>
+                <div class="app-body">
+                    <h3>Fondo de Pantalla</h3>
+                    <p>Selecciona una imagen para tu fondo.</p>
+                    <label for="wallpaper-upload" class="file-upload-label">
+                        <i class="material-icons">upload_file</i>
+                        <span>Elegir archivo</span>
+                    </label>
+                    <input type="file" id="wallpaper-upload" accept="image/*">
+                    <button id="remove-wallpaper-btn" class="danger-btn">
+                        <i class="material-icons">delete_outline</i>
+                        <span>Quitar Fondo</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="app-notes" class="app-window">
+                <div class="app-header"><span>Notas</span></div>
+                <div class="app-body">
+                    <div id="notes-list-view">
+                        <button id="new-note-btn" class="primary-btn">
+                            <i class="material-icons">add_circle</i>
+                            <span>Nueva Nota</span>
+                        </button>
+                        <div id="notes-list-container"></div>
+                    </div>
+                    <div id="note-editor-view" style="display: none;">
+                        <input type="hidden" id="note-id-input">
+                        <input type="text" id="note-title-input" placeholder="Título de la nota">
+                        <textarea id="note-content-input" placeholder="Escribe algo..."></textarea>
+                        <button id="save-note-btn" class="primary-btn">Guardar</button>
+                        <button id="back-to-list-btn">Volver</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="app-game" class="app-window">
+                <div class="app-header"><span>Snake</span></div>
+                <div class="app-body game-body">
+                    <div id="game-info">Puntuación: <span id="score">0</span></div>
+                    <canvas id="snake-canvas" width="340" height="400"></canvas>
+                    <p class="game-instructions">Usa las teclas de flecha para moverte.</p>
+                </div>
+            </div>
+
+            <div id="app-recents" class="app-window">
+                <div class="app-header">
+                    <span>Ventanas Abiertas</span>
+                    <button id="recents-close-all" class="danger-btn small-btn">Cerrar Todo</button>
+                </div>
+                <div class="app-body" id="recents-container"></div>
+            </div>
+
+            <div id="app-gallery" class="app-window">
+                <div class="app-header"><span>Galería</span></div>
+                <div class="app-body">
+                    <div class="gallery-controls">
+                        <label for="gallery-upload" class="file-upload-label small-btn">
+                            <i class="material-icons">add_a_photo</i>
+                            <span>Subir Foto</span>
+                        </label>
+                        <input type="file" id="gallery-upload" accept="image/*">
+                        <div class="storage-info" id="gallery-storage-info">
+                            Calculando...
+                        </div>
+                    </div>
+                    <div id="gallery-grid">
+                        <p>No hay imágenes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="app-calculator" class="app-window">
+                <div class="app-header"><span>Calculadora</span></div>
+                <div class="app-body calc-body">
+                    <div id="calc-display">0</div>
+                    <div id="calc-grid">
+                        <button class="calc-button" data-type="clear">C</button>
+                        <button class="calc-button" data-type="operator" data-value="/">&divide;</button>
+                        <button class="calc-button" data-type="operator" data-value="*">&times;</button>
+                        <button class="calc-button" data-type="backspace">&larr;</button>
+
+                        <button class="calc-button" data-type="number" data-value="7">7</button>
+                        <button class="calc-button" data-type="number" data-value="8">8</button>
+                        <button class="calc-button" data-type="number" data-value="9">9</button>
+                        <button class="calc-button" data-type="operator" data-value="-">&ndash;</button>
+
+                        <button class="calc-button" data-type="number" data-value="4">4</button>
+                        <button class="calc-button" data-type="number" data-value="5">5</button>
+                        <button class="calc-button" data-type="number" data-value="6">6</button>
+                        <button class="calc-button" data-type="operator" data-value="+">+</button>
+
+                        <button class="calc-button" data-type="number" data-value="1">1</button>
+                        <button class="calc-button" data-type="number" data-value="2">2</button>
+                        <button class="calc-button" data-type="number" data-value="3">3</button>
+                        <button class="calc-button" data-type="equals" data-value="=">=</button>
+
+                        <button class="calc-button" data-type="number" data-value="0">0</button>
+                        <button class="calc-button" data-type="number" data-value=".">.</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="app-file-manager" class="app-window">
+                <div class="app-header">
+                    <span>Archivos</span>
+                    <button id="delete-selected-files-btn" class="danger-btn small-btn">
+                        <i class="material-icons">delete</i>
+                        <span>Borrar</span>
+                    </button>
+                </div>
+                <div class="app-body">
+                    <div class="storage-summary">
+                        <h3>Almacenamiento</h3>
+                        <progress id="storage-bar" max="100" value="0"></progress>
+                        <div class="storage-details">
+                            <span id="storage-usage-text">Usado: 0 B de 5 MB</span>
+                            <span id="storage-available-text">Disponible: 5 MB</span>
+                        </div>
+                    </div>
+                    <div id="file-list-container">
+                        <p>No hay archivos.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div id="gallery-modal" class="hidden">
+        <button id="gallery-modal-close">&times;</button>
+        
+        <div class="modal-content">
+            <img id="gallery-modal-image" src="" alt="Vista completa">
+            
+            <div class="modal-actions">
+                <button id="set-wallpaper-btn" class="primary-btn">
+                    <i class="material-icons">wallpaper</i>
+                    <span>Fondo</span>
+                </button>
+                
+                <button id="modal-delete-btn" class="danger-btn" style="width: auto; padding: 10px 15px;">
+                    <i class="material-icons">delete</i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
